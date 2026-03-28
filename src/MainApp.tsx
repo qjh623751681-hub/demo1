@@ -8,6 +8,7 @@ import AIApplication from './pages/AIApplication';
 import CloudService from './pages/CloudService';
 import ComputeCenter from './pages/ComputeCenter';
 import AdminCenter from './pages/AdminCenter';
+import DatasetDetail from './pages/DatasetDetail';
 
 export default function MainApp() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -56,6 +57,20 @@ export default function MainApp() {
       {currentPage === 'cloud' && <CloudService onNavigate={navigateTo} />}
       {currentPage === 'compute' && <ComputeCenter onNavigate={navigateTo} />}
       {currentPage === 'admin' && <AdminCenter onNavigate={navigateTo} />}
+      {currentPage === 'dataset' && <DatasetDetail dataset={{
+        id: 1,
+        name: '示例数据集',
+        description: '这是一个示例数据集',
+        type: 'text',
+        format: 'JSONL',
+        samples: 125000,
+        size: '2.4GB',
+        status: 'ready',
+        updated: '2小时前',
+        owner: '张三',
+        tags: ['指令微调', '开源'],
+        dataSource: 'huggingface'
+      }} onBack={() => navigateTo('datacenter')} />}
     </>
   );
 }
