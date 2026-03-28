@@ -8,7 +8,8 @@ import {
   Play, Pause, RotateCcw, GitBranch, Layers, Eye, History,
   ArrowLeft, ArrowRight, RefreshCw, SortAsc, FolderOpen,
   Table, AlignLeft, Type, Scissors, Wand2, Workflow,
-  CheckCircle2, AlertCircle, Loader2, BoxSelect, Terminal, ExternalLink, HelpCircle
+  CheckCircle2, AlertCircle, Loader2, BoxSelect, Terminal, ExternalLink, HelpCircle,
+  Zap
 } from 'lucide-react';
 
 // 模拟文件数据
@@ -57,7 +58,7 @@ const navItems = [
 const subNavItems = [
   { id: 'files', label: '文件管理', icon: Folder },
   { id: 'datasets', label: '数据集', icon: Database },
-  { id: 'annotation', label: '数据标注', icon: Tag },
+  { id: 'annotation', label: '数据标注', icon: Tag, external: true },
   { id: 'pipeline', label: '数据流水线', icon: Workflow },
 ];
 
@@ -450,11 +451,20 @@ export default function DataCenter({ onNavigate }: DataCenterProps) {
         {/* 子导航 + 内容 */}
         <div className="p-6 max-w-[1600px] mx-auto">
           <div className="flex items-center gap-1 mb-6 bg-white rounded-xl p-1 border border-gray-100 shadow-sm w-fit">
-            {subNavItems.map((item) => (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <item.icon className="w-4 h-4" />{item.label}
-              </button>
-            ))}
+            {subNavItems.map((item) => {
+              const handleClick = () => {
+                if (item.id === 'annotation' && item.external) {
+                  onNavigate?.('annotation');
+                } else {
+                  setActiveTab(item.id);
+                }
+              };
+              return (
+                <button key={item.id} onClick={handleClick} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  <item.icon className="w-4 h-4" />{item.label}
+                </button>
+              );
+            })}
           </div>
           {activeTab === 'files' && renderFiles()}
           {activeTab === 'datasets' && renderDatasets()}

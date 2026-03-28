@@ -140,6 +140,39 @@ onNavigate?.('dashboard');
 
 ---
 
+## 问题5：运行时白屏但编译通过
+
+### 现象
+- TypeScript 编译通过 (`npx tsc --noEmit` 无错误)
+- 浏览器打开页面白屏
+- 控制台报错：`XXX is not defined` 或 `Cannot read properties of undefined`
+
+### 根本原因
+使用了未导入的变量/组件，TypeScript 有时不会报错（特别是 JSX 组件）。
+
+### 典型案例
+```tsx
+// ❌ 错误：使用了 Zap 但没有导入
+import { LayoutDashboard, Database } from 'lucide-react';
+// ... 其他导入，但漏了 Zap
+
+export default function Component() {
+  return <Zap className="w-6 h-6" />;  // 运行时报错：Zap is not defined
+}
+```
+
+### 正确做法
+1. **使用变量前先检查是否导入**
+2. **VS Code 开启自动导入**：设置 `"typescript.suggest.autoImports": true`
+3. **看到报错立即检查控制台**：F12 → Console 看红色错误
+
+### 快速排查
+```bash
+# 检查文件是否用了未导入的变量
+grep -n "<Zap" src/DataCenter.tsx    # 看哪里用了
+grep -n "Zap," src/DataCenter.tsx    # 看是否导入
+```
+
 ## 开发检查清单
 
 每次修改后必须：

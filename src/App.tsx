@@ -339,7 +339,7 @@ const navItems = [
 ];
 
 interface AIPlatformDashboardProps {
-  onNavigate?: (page: 'dashboard' | 'datacenter') => void;
+  onNavigate?: (page: 'dashboard' | 'datacenter' | 'annotation') => void;
 }
 
 export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardProps) {
