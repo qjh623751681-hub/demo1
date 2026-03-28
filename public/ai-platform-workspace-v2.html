@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智算平台 - 工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        *::-webkit-scrollbar { width: 6px; height: 6px; }
+        *::-webkit-scrollbar-track { background: transparent; }
+        *::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        *::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark *::-webkit-scrollbar-thumb { background: #475569; }
+        .dark *::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .gradient-card-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .gradient-card-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .gradient-card-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .gradient-card-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        
+        .ring-progress { transform: rotate(-90deg); }
+        .ring-progress-circle { transition: stroke-dashoffset 1s ease; }
+        
+        .glass-light { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
+        .glass-dark { background: rgba(30,41,59,0.7); backdrop-filter: blur(10px); }
+        
+        .hover-lift { transition: all 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); }
+        .dark .hover-lift:hover { box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
+        
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59,130,246,0); }
+            100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+        }
+        .status-dot-running { animation: pulse-ring 2s infinite; }
+        
+        .cluster-node { transition: all 0.3s ease; }
+        .cluster-node:hover { transform: scale(1.05); }
+        
+        .gpu-card { transition: all 0.2s ease; }
+        .gpu-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100 transition-colors duration-300">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // 图标组件
+        const Icons = {
+            LayoutDashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,
+            Database: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>,
+            Code: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+            Brain: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+            Bot: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>,
+            Cloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>,
+            Cpu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>,
+            Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m20.8 9.9h-6m-6 0H1.9m18.12 4.24l4.24 4.24M6.34 17.66l-4.24 4.24"/></svg>,
+            Bell: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+            Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Sun: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
+            Moon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>,
+            ArrowUpRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>,
+            Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            Calendar: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            ChevronDown: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>,
+            Server: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg>,
+            Activity: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            Layers: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+            Star: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            Clock: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            MoreHorizontal: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
+            CheckCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Loader: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>,
+            AlertCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+            Folder: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+            FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            Play: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            ExternalLink: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+            Zap: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            TrendingUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+            TrendingDown: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>,
+        };
+
+        // 导航配置
+        const navItems = [
+            { id: 'workspace', label: '工作台', icon: Icons.LayoutDashboard },
+            { id: 'datacenter', label: '数据中心', icon: Icons.Database },
+            { id: 'devenv', label: '开发环境', icon: Icons.Code },
+            { id: 'modelcenter', label: '模型中心', icon: Icons.Brain },
+            { id: 'aiapps', label: 'AI 应用', icon: Icons.Bot },
+            { id: 'cloud', label: '云服务', icon: Icons.Cloud },
+            { id: 'compute', label: '算力中心', icon: Icons.Cpu },
+            { id: 'admin', label: '平台管理', icon: Icons.Settings }
+        ];
+
+        // 环形进度组件
+        const RingProgress = ({ percentage, color, size = 80, strokeWidth = 8, label, subLabel }) => {
+            const radius = (size - strokeWidth) / 2;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            const colorClasses = {
+                blue: 'stroke-blue-500',
+                purple: 'stroke-purple-500',
+                orange: 'stroke-orange-500',
+                green: 'stroke-emerald-500',
+                red: 'stroke-red-500'
+            };
+            
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="relative" style={{ width: size, height: size }}>
+                        <svg className="w-full h-full ring-progress" viewBox={`0 0 ${size} ${size}`}>
+                            <circle
+                                className="stroke-gray-200 dark:stroke-gray-700"
+                                strokeWidth={strokeWidth}
+                                fill="transparent"
+                                r={radius}
+                                cx={size / 2}
+                                cy={size / 2}
+                            />
+                            <circle
+                                className={`ring-progress-circle ${colorClasses[color]}`}
+                                strokeWidth={strokeWidth}
+                                strokeLinecap="round"
+                                fill="transparent"
+                                r={radius}
+                                cx={size / 2}
+                                cy={size / 2}
+                                style={{ strokeDasharray: circumference, strokeDashoffset: offset }}
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-xl font-bold">{percentage}%</span>
+                        </div>
+                    </div>
+                    <span className="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                    {subLabel && <span className="text-xs text-gray-500 dark:text-gray-400">{subLabel}</span>}
+                </div>
+            );
+        };
+
+        // GPU 集群可视化组件
+        const GPUClusterView = () => {
+            const clusters = [
+                {
+                    name: 'AI训练集群-A',
+                    status: 'healthy',
+                    nodes: [
+                        { name: 'node-01', gpuCount: 8, used: 6, status: 'running' },
+                        { name: 'node-02', gpuCount: 8, used: 7, status: 'running' },
+                        { name: 'node-03', gpuCount: 8, used: 4, status: 'running' },
+                        { name: 'node-04', gpuCount: 8, used: 0, status: 'idle' }
+                    ]
+                },
+                {
+                    name: '推理集群-B',
+                    status: 'healthy',
+                    nodes: [
+                        { name: 'node-05', gpuCount: 4, used: 3, status: 'running' },
+                        { name: 'node-06', gpuCount: 4, used: 2, status: 'running' }
+                    ]
+                }
+            ];
+
+            return (
+                <div className="space-y-4">
+                    {clusters.map((cluster, idx) => (
+                        <div key={idx} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Icons.Server />
+                                    <span className="font-semibold">{cluster.name}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">健康</span>
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                    {cluster.nodes.reduce((acc, n) => acc + n.used, 0)}/{cluster.nodes.reduce((acc, n) => acc + n.gpuCount, 0)} GPU
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {cluster.nodes.map((node, nidx) => (
+                                    <div key={nidx} className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 cluster-node cursor-pointer">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-medium">{node.name}</span>
+                                            <div className={`w-2 h-2 rounded-full ${node.status === 'running' ? 'bg-green-500 status-dot-running' : 'bg-gray-400'}`}></div>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-1">
+                                            {Array.from({ length: node.gpuCount }).map((_, gidx) => (
+                                                <div
+                                                    key={gidx}
+                                                    className={`h-6 rounded flex items-center justify-center text-[10px] font-bold ${
+                                                        gidx < node.used
+                                                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
+                                                            : 'bg-gray-200 dark:bg-slate-600 text-gray-400'
+                                                    }`}
+                                                >
+                                                    {gidx < node.used ? <Icons.Zap /> : ''}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-2 text-xs text-gray-500">
+                                            {node.used}/{node.gpuCount} 使用中
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        // 主应用
+        function App() {
+            const [darkMode, setDarkMode] = useState(false);
+            const [activeNav, setActiveNav] = useState('workspace');
+            const [showGPUDetail, setShowGPUDetail] = useState(false);
+            
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [darkMode]);
+
+            const agents = [
+                { name: '通用大语言模型', desc: '基于GPT-4微调，支持多轮对话与文档问答', icon: '🤖', color: 'gradient-card-1', status: '运行中', memory: '16GB', calls: '2.3k' },
+                { name: '图像生成智能体', desc: '基于Stable Diffusion XL，支持高清图像生成', icon: '🎨', color: 'gradient-card-2', status: '运行中', memory: '24GB', calls: '892' },
+                { name: '代码生成助手', desc: '支持多语言代码生成、调试与优化，内置代码检查', icon: '💻', color: 'gradient-card-3', status: '运行中', memory: '8GB', calls: '1.5k' }
+            ];
+
+            const tasks = [
+                { name: '大语言模型微调训练', type: '训练', status: 'running', progress: 68, time: '已运行2小时15分', eta: '预计剩余45分钟', color: 'blue' },
+                { name: '图像数据集预处理', type: '数据处理', status: 'running', progress: 82, time: '已运行45分钟', eta: '预计剩余10分钟', color: 'emerald' },
+                { name: '模型性能基准测试', type: '评测', status: 'running', progress: 35, time: '已运行15分钟', eta: '预计剩余30分钟', color: 'orange' },
+                { name: 'API接口服务部署', type: '部署', status: 'completed', progress: 100, time: '30分钟前完成', eta: '运行成功', color: 'blue' }
+            ];
+
+            const favorites = [
+                { name: 'LLaMA3 70B 中文微调版', type: '模型', date: '2026-03-20', downloads: '12.5k', icon: '🦙' },
+                { name: 'Stable Diffusion XL 1.0', type: '模型', date: '2026-03-15', downloads: '8.3k', icon: '🎨' },
+                { name: 'CodeLlama-34B 代码生成模型', type: '模型', date: '2026-03-10', downloads: '5.7k', icon: '💻' },
+                { name: 'Whisper-large-v3 语音识别模型', type: '模型', date: '2026-03-05', downloads: '4.2k', icon: '🎤' }
+            ];
+
+            const recent = [
+                { name: '大语言模型智能体', type: '智能体管理', time: '10分钟前', icon: '🤖' },
+                { name: '图像数据集V2', type: '数据集管理', time: '35分钟前', icon: '📊' },
+                { name: '模型训练任务#2301', type: '任务中心', time: '1小时前', icon: '📋' },
+                { name: 'API密钥管理', type: '访问控制', time: '2小时前', icon: '🔑' }
+            ];
+
+            return (
+                <div className="min-h-screen">
+                    {/* 侧边栏 */}
+                    <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 z-50">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">AI</span>
+                                </div>
+                                <span className="font-bold text-xl">智算平台</span>
+                            </div>
+                        </div>
+                        <nav className="p-3 space-y-1">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveNav(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                                        activeNav === item.id
+                                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    <item.icon />
+                                    {item.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </aside>
+
+                    {/* 主内容区 */}
+                    <main className="ml-64">
+                        {/* 顶部栏 */}
+                        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+                            <div className="h-full px-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4 flex-1">
+                                    <div className="relative flex-1 max-w-xl">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                            <Icons.Search />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="搜索智能体、任务、数据集或文档"
+                                            className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-slate-800 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                        {darkMode ? <Icons.Sun /> : <Icons.Moon />}
+                                    </button>
+                                    <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                                        <Icons.Bell />
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    </button>
+                                    <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700">
+                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium">
+                                            张
+                                        </div>
+                                        <div className="hidden md:block">
+                                            <div className="text-sm font-medium">张三</div>
+                                            <div className="text-xs text-gray-500">企业高级版</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* 内容区域 */}
+                        <div className="p-6 max-w-[1600px]">
+                            {/* 页面标题 */}
+                            <div className="mb-6">
+                                <div className="flex items-baseline gap-3 mb-2">
+                                    <h1 className="text-2xl font-bold">工作台</h1>
+                                    <span className="text-sm text-gray-500">2026年3月27日 星期五</span>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    欢迎回来，您今天有<span className="text-blue-600 font-medium">3个运行中的任务</span>，<span className="text-orange-600 font-medium">2个待处理通知</span>
+                                </p>
+                            </div>
+
+                            {/* 快捷操作按钮 */}
+                            <div className="flex gap-3 mb-6">
+                                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
+                                    <Icons.Plus />
+                                    新建智能体
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                                    新建任务
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                                    上传数据集
+                                </button>
+                            </div>
+
+                            {/* 资源总览 - 环形图 */}
+                            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <Icons.Activity />
+                                        <h2 className="text-lg font-bold">资源总览</h2>
+                                        <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">实时更新</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                                            <Icons.Refresh />
+                                            刷新
+                                        </button>
+                                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                                            <Icons.Download />
+                                            导出报表
+                                        </button>
+                                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                                            <Icons.Calendar />
+                                            近7天
+                                            <Icons.ChevronDown />
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* 左侧环形图 */}
+                                    <div className="lg:col-span-2">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                            <RingProgress percentage={60} color="blue" label="CPU 使用率" subLabel="32核 / 可用24核" />
+                                            <RingProgress percentage={70} color="purple" label="GPU 使用率" subLabel="128GB / 可用38GB" />
+                                            <RingProgress percentage={40} color="orange" label="存储使用率" subLabel="2TB / 可用800GB" />
+                                            <RingProgress percentage={30} color="green" label="任务负载" subLabel="3个运行中 / 最多10个" />
+                                        </div>
+                                        
+                                        {/* GPU 详情切换 */}
+                                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="font-semibold flex items-center gap-2">
+                                                    <Icons.Layers />
+                                                    GPU 集群资源分布
+                                                </h3>
+                                                <button 
+                                                    onClick={() => setShowGPUDetail(!showGPUDetail)}
+                                                    className="text-sm text-blue-600 hover:text-blue-700"
+                                                >
+                                                    {showGPUDetail ? '收起详情' : '查看详情'}
+                                                </button>
+                                            </div>
+                                            {showGPUDetail && <GPUClusterView />}
+                                            {!showGPUDetail && (
+                                                <div className="grid grid-cols-4 gap-3">
+                                                    {[
+                                                        { name: 'AI训练集群-A', used: 17, total: 32, status: 'busy' },
+                                                        { name: '推理集群-B', used: 5, total: 8, status: 'normal' },
+                                                        { name: '开发测试集群', used: 2, total: 8, status: 'idle' },
+                                                        { name: '备用集群', used: 0, total: 16, status: 'idle' }
+                                                    ].map((cluster, idx) => (
+                                                        <div key={idx} className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-xs font-medium">{cluster.name}</span>
+                                                                <div className={`w-2 h-2 rounded-full ${
+                                                                    cluster.status === 'busy' ? 'bg-red-500' : 
+                                                                    cluster.status === 'normal' ? 'bg-yellow-500' : 'bg-green-500'
+                                                                }`}></div>
+                                                            </div>
+                                                            <div className="text-lg font-bold">{cluster.used}/{cluster.total}</div>
+                                                            <div className="text-xs text-gray-500">GPU卡</div>
+                                                            <div className="mt-2 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className={`h-full rounded-full ${
+                                                                        cluster.status === 'busy' ? 'bg-red-500' : 
+                                                                        cluster.status === 'normal' ? 'bg-yellow-500' : 'bg-green-500'
+                                                                    }`}
+                                                                    style={{ width: `${(cluster.used/cluster.total)*100}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* 右侧资源配额 */}
+                                    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                            <Icons.Server />
+                                            资源配额
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {[
+                                                { label: 'CPU 核心', used: 32, total: 64, unit: '核', color: 'blue' },
+                                                { label: 'GPU 显存', used: 64, total: 128, unit: 'GB', color: 'purple' },
+                                                { label: '存储容量', used: 1.2, total: 2, unit: 'TB', color: 'orange' }
+                                            ].map((quota, idx) => (
+                                                <div key={idx}>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-sm text-gray-600 dark:text-gray-400">{quota.label}</span>
+                                                        <span className="text-sm font-medium">{quota.used}/{quota.total}{quota.unit}</span>
+                                                    </div>
+                                                    <div className="h-2 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full rounded-full bg-${quota.color}-500`}
+                                                            style={{ width: `${(quota.used/quota.total)*100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 智能体和任务 */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                {/* 我的智能体 */}
+                                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Icons.Bot />
+                                            <h2 className="font-bold">我的智能体</h2>
+                                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">8个</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                                <Icons.Plus />
+                                                新建智能体
+                                            </button>
+                                            <button className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600">查看全部</button>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {agents.map((agent, idx) => (
+                                            <div key={idx} className={`${agent.color} rounded-xl p-4 text-white hover-lift cursor-pointer relative overflow-hidden`}>
+                                                <div className="relative z-10">
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <span className="text-3xl">{agent.icon}</span>
+                                                        <span className="px-2 py-0.5 rounded-full text-xs bg-white/20">{agent.status}</span>
+                                                    </div>
+                                                    <h3 className="font-bold mb-1">{agent.name}</h3>
+                                                    <p className="text-xs text-white/80 mb-3 line-clamp-2">{agent.desc}</p>
+                                                    <div className="flex items-center gap-3 text-xs text-white/70">
+                                                        <span>{agent.memory}显存</span>
+                                                        <span>{agent.calls}次调用</span>
+                                                    </div>
+                                                    <div className="mt-3 flex gap-2">
+                                                        <button className="flex-1 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-medium hover:bg-gray-100">
+                                                            一键打开
+                                                        </button>
+                                                        <button className="flex-1 py-1.5 bg-white/20 rounded-lg text-xs hover:bg-white/30">
+                                                            在线试用
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 我的任务 */}
+                                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Icons.Activity />
+                                            <h2 className="font-bold">我的任务</h2>
+                                            <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">3个运行中</span>
+                                        </div>
+                                        <button className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600">查看全部</button>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        {tasks.map((task, idx) => (
+                                            <div key={idx} className="group">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium">{task.name}</span>
+                                                        {task.status === 'running' ? (
+                                                            <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 flex items-center gap-1">
+                                                                <Icons.Loader />
+                                                                运行中
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                                                已完成
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <button className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600">
+                                                        <Icons.MoreHorizontal />
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                                    <span>训练进度</span>
+                                                    <span>{task.time}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full rounded-full bg-${task.color}-500 transition-all duration-500`}
+                                                            style={{ width: `${task.progress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-sm font-medium w-12 text-right">{task.progress}%</span>
+                                                </div>
+                                                <div className="mt-1 text-xs text-gray-500 text-right">{task.eta}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 底部：收藏和最近访问 */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* 我的收藏 */}
+                                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Icons.Star />
+                                            <h2 className="font-bold">我的收藏</h2>
+                                            <span className="text-sm text-gray-500">12个</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            {['模型', '数据集', '应用'].map((tab, idx) => (
+                                                <button 
+                                                    key={idx}
+                                                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                                        idx === 0 
+                                                            ? 'bg-blue-600 text-white' 
+                                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                                                    }`}
+                                                >
+                                                    {tab}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {favorites.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer">
+                                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xl">
+                                                    {item.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium truncate group-hover:text-blue-600 transition-colors">{item.name}</div>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                                                        <span>收藏于 {item.date}</span>
+                                                        <span>·</span>
+                                                        <span>{item.downloads}次下载</span>
+                                                    </div>
+                                                </div>
+                                                <button className="px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                    使用
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 最近访问 */}
+                                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Icons.Clock />
+                                            <h2 className="font-bold">最近访问</h2>
+                                            <span className="text-xs text-gray-500">最近24小时</span>
+                                        </div>
+                                        <button className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600">查看全部</button>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {recent.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer">
+                                                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-xl">
+                                                    {item.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium truncate group-hover:text-blue-600 transition-colors">{item.name}</div>
+                                                    <div className="text-xs text-gray-500">{item.type}</div>
+                                                </div>
+                                                <div className="text-xs text-gray-500">{item.time}</div>
+                                                <button className="px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                    打开
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
