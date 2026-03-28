@@ -63,7 +63,7 @@ const subNavItems = [
 ];
 
 interface DataCenterProps {
-  onNavigate?: (page: 'dashboard' | 'datacenter') => void;
+  onNavigate?: (page: 'dashboard' | 'datacenter' | 'annotation') => void;
 }
 
 export default function DataCenter({ onNavigate }: DataCenterProps) {
