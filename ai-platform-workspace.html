@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 平台 - 工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        *::-webkit-scrollbar { width: 6px; height: 6px; }
+        *::-webkit-scrollbar-track { background: #1e293b; }
+        *::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        *::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .gradient-text { background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item:hover { background: rgba(59,130,246,0.15); }
+        .nav-item.active { background: rgba(59,130,246,0.25); border-right: 3px solid #3b82f6; }
+        .progress-bar { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+        .glass { background: rgba(30,41,59,0.7); backdrop-filter: blur(10px); }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.5); }
+            50% { box-shadow: 0 0 20px rgba(59,130,246,0.8); }
+        }
+        .status-running { animation: pulse-glow 2s infinite; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const Icons = {
+            LayoutDashboard: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+            Database: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>,
+            Code: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+            Brain: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+            Bot: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>,
+            Cloud: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>,
+            Cpu: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>,
+            Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Bell: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Upload: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            FileCode: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 11 15 15 11"/></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            MoreHorizontal: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
+            Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            CheckCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Loader: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="22"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/></svg>,
+            PauseCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" x2="10" y1="15" y2="9"/><line x1="14" x2="14" y1="15" y2="9"/></svg>
+        };
+
+        const navItems = [
+            { id: 'workspace', label: '工作台', icon: Icons.LayoutDashboard },
+            { id: 'datacenter', label: '数据中心', icon: Icons.Database },
+            { id: 'devenv', label: '开发环境', icon: Icons.Code },
+            { id: 'modelcenter', label: '模型中心', icon: Icons.Brain },
+            { id: 'aiapps', label: 'AI 应用', icon: Icons.Bot },
+            { id: 'cloud', label: '云服务', icon: Icons.Cloud },
+            { id: 'compute', label: '算力中心', icon: Icons.Cpu },
+            { id: 'admin', label: '平台管理', icon: Icons.Settings }
+        ];
+
+        const agents = [
+            { name: '数据清洗助手', desc: '自动化数据预处理与清洗', time: '2小时前', status: '运行中' },
+            { name: '代码生成器', desc: '基于自然语言生成Python代码', time: '5小时前', status: '空闲' },
+            { name: '模型评估助手', desc: '自动化模型性能评估', time: '1天前', status: '运行中' },
+            { name: '文档助手', desc: '自动生成技术文档', time: '2天前', status: '空闲' }
+        ];
+
+        const tasks = [
+            { name: 'LLM-7B 微调任务', type: '训练', status: 'running', progress: 78, time: '2024-01-15 09:30' },
+            { name: '数据集预处理', type: '数据处理', status: 'completed', progress: 100, time: '2024-01-15 08:15' },
+            { name: '模型推理测试', type: '推理', status: 'queued', progress: 0, time: '2024-01-15 10:00' },
+            { name: '视觉模型训练', type: '训练', status: 'running', progress: 45, time: '2024-01-14 16:20' },
+            { name: '数据增强流水线', type: '流水线', status: 'completed', progress: 100, time: '2024-01-14 14:00' }
+        ];
+
+        const favorites = {
+            models: [
+                { name: 'GPT-4 Turbo', type: '大语言模型', size: '1.76T', updated: '3天前' },
+                { name: 'Stable Diffusion XL', type: '图像生成', size: '6.94G', updated: '1周前' },
+                { name: 'Whisper Large v3', type: '语音识别', size: '1.55G', updated: '2周前' }
+            ],
+            datasets: [
+                { name: 'Common Crawl 2024', type: '文本语料', size: '200TB', updated: '1月前' },
+                { name: 'ImageNet-1K', type: '图像分类', size: '150GB', updated: '2月前' }
+            ],
+            apps: [
+                { name: '智能客服系统', type: '对话应用', users: '1.2k', updated: '3天前' },
+                { name: '代码审查助手', type: '开发工具', users: '856', updated: '1周前' }
+            ]
+        };
+
+        const recentAccess = [
+            { name: 'data_preprocessing.ipynb', type: 'Notebook', time: '10分钟前' },
+            { name: 'Llama-2-7b-hf', type: '模型', time: '30分钟前' },
+            { name: '智能文档问答', type: '应用', time: '1小时前' },
+            { name: 'training_config.yaml', type: '配置文件', time: '2小时前' },
+            { name: 'customer_service_v2', type: '智能体', time: '3小时前' }
+        ];
+
+        function App() {
+            const [activeNav, setActiveNav] = useState('workspace');
+            const [activeTab, setActiveTab] = useState('models');
+            const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+            const StatusBadge = ({ status }) => {
+                const styles = {
+                    running: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 status-running',
+                    completed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                    queued: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    运行中: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 status-running',
+                    空闲: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+                    完成: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                    排队: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                };
+                return (
+                    <span className={`px-2 py-0.5 rounded-full text-xs border ${styles[status] || styles.idle}`}>
+                        {status}
+                    </span>
+                );
+            };
+
+            const TypeBadge = ({ type }) => {
+                const colors = {
+                    训练: 'bg-purple-500/20 text-purple-400',
+                    推理: 'bg-cyan-500/20 text-cyan-400',
+                    数据处理: 'bg-pink-500/20 text-pink-400',
+                    流水线: 'bg-orange-500/20 text-orange-400',
+                    Notebook: 'bg-indigo-500/20 text-indigo-400',
+                    模型: 'bg-blue-500/20 text-blue-400',
+                    应用: 'bg-emerald-500/20 text-emerald-400',
+                    配置文件: 'bg-slate-500/20 text-slate-400',
+                    智能体: 'bg-violet-500/20 text-violet-400'
+                };
+                return (
+                    <span className={`px-2 py-0.5 rounded text-xs ${colors[type] || 'bg-slate-500/20 text-slate-400'}`}>
+                        {type}
+                    </span>
+                );
+            };
+
+            return (
+                <div className="flex h-screen bg-slate-950">
+                    {/* Sidebar */}
+                    <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col`}>
+                        <div className="p-4 border-b border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">AI</span>
+                                </div>
+                                {!sidebarCollapsed && <span className="font-bold text-lg gradient-text">智算平台</span>}
+                            </div>
+                        </div>
+                        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveNav(item.id)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all nav-item ${
+                                        activeNav === item.id ? 'active text-blue-400' : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                                >
+                                    <item.icon />
+                                    {!sidebarCollapsed && <span>{item.label}</span>}
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t border-slate-800">
+                            <button 
+                                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                                className="w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`}><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col min-w-0">
+                        {/* Header */}
+                        <header className="h-16 bg-slate-900/80 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6">
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-xl font-semibold text-slate-100">工作台</h1>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <Icons.Search />
+                                    <input 
+                                        type="text" 
+                                        placeholder="搜索..." 
+                                        className="bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 w-64"
+                                    />
+                                </div>
+                                <button className="relative p-2 text-slate-400 hover:text-slate-200 transition-colors">
+                                    <Icons.Bell />
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                </button>
+                                <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-medium">
+                                        PM
+                                    </div>
+                                    <span className="text-sm text-slate-300">产品经理</span>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {/* Overview Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 card-hover">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-slate-400 text-sm">GPU 资源用量</span>
+                                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                            <Icons.Cpu />
+                                        </div>
+                                    </div>
+                                    <div className="text-2xl font-bold text-slate-100 mb-2">12/20 <span className="text-sm font-normal text-slate-500">卡</span></div>
+                                    <div className="w-full bg-slate-800 rounded-full h-2">
+                                        <div className="progress-bar h-2 rounded-full" style={{width: '60%'}}></div>
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-2">使用率 60%</div>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 card-hover">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-slate-400 text-sm">任务状态</span>
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                            <Icons.CheckCircle />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <span className="text-2xl font-bold text-emerald-400">8</span>
+                                        <span className="text-sm text-slate-500">运行中</span>
+                                        <span className="text-slate-600">|</span>
+                                        <span className="text-lg font-semibold text-amber-400">3</span>
+                                        <span className="text-sm text-slate-500">排队</span>
+                                    </div>
+                                    <div className="text-xs text-slate-500">已完成 156 个任务</div>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 card-hover">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-slate-400 text-sm">消息通知</span>
+                                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                                            <Icons.Bell />
+                                        </div>
+                                    </div>
+                                    <div className="text-2xl font-bold text-slate-100 mb-2">5 <span className="text-sm font-normal text-slate-500">条未读</span></div>
+                                    <div className="text-xs text-slate-500">2 个任务完成，3 个系统提醒</div>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 card-hover">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-slate-400 text-sm">快捷入口</span>
+                                        <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                            <Icons.Plus />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="flex-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs hover:bg-blue-500/30 transition-colors">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Icons.Plus />
+                                                <span>新任务</span>
+                                            </div>
+                                        </button>
+                                        <button className="flex-1 px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/30 transition-colors">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Icons.Upload />
+                                                <span>传数据</span>
+                                            </div>
+                                        </button>
+                                        <button className="flex-1 px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs hover:bg-purple-500/30 transition-colors">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Icons.FileCode />
+                                                <span>Notebook</span>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Left Column */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* My Agents */}
+                                    <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-semibold text-slate-100">我的智能体</h2>
+                                            <button className="text-sm text-blue-400 hover:text-blue-300">查看全部</button>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {agents.map((agent, idx) => (
+                                                <div key={idx} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 hover:border-slate-600 transition-all cursor-pointer group">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
+                                                            <Icons.Bot />
+                                                        </div>
+                                                        <StatusBadge status={agent.status} />
+                                                    </div>
+                                                    <h3 className="font-medium text-slate-200 mb-1 group-hover:text-blue-400 transition-colors">{agent.name}</h3>
+                                                    <p className="text-xs text-slate-500 mb-2">{agent.desc}</p>
+                                                    <div className="flex items-center gap-1 text-xs text-slate-600">
+                                                        <Icons.Clock />
+                                                        <span>{agent.time}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* My Tasks */}
+                                    <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-semibold text-slate-100">我的任务</h2>
+                                            <button className="text-sm text-blue-400 hover:text-blue-300">查看全部</button>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="text-xs text-slate-500 border-b border-slate-800">
+                                                        <th className="text-left pb-3 font-medium">任务名称</th>
+                                                        <th className="text-left pb-3 font-medium">类型</th>
+                                                        <th className="text-left pb-3 font-medium">状态</th>
+                                                        <th className="text-left pb-3 font-medium">进度</th>
+                                                        <th className="text-left pb-3 font-medium">开始时间</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-sm">
+                                                    {tasks.map((task, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors">
+                                                            <td className="py-3 text-slate-200">{task.name}</td>
+                                                            <td className="py-3"><TypeBadge type={task.type} /></td>
+                                                            <td className="py-3"><StatusBadge status={task.status === 'running' ? '运行中' : task.status === 'completed' ? '完成' : '排队'} /></td>
+                                                            <td className="py-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-20 bg-slate-800 rounded-full h-1.5">
+                                                                        <div className={`h-1.5 rounded-full ${task.progress === 100 ? 'bg-blue-500' : 'progress-bar'}`} style={{width: `${task.progress}%`}}></div>
+                                                                    </div>
+                                                                    <span className="text-xs text-slate-500">{task.progress}%</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3 text-slate-500 text-xs">{task.time}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column */}
+                                <div className="space-y-6">
+                                    {/* My Favorites */}
+                                    <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-semibold text-slate-100">我的收藏</h2>
+                                        </div>
+                                        <div className="flex gap-1 mb-4 bg-slate-800/50 p-1 rounded-lg">
+                                            {['models', 'datasets', 'apps'].map(tab => (
+                                                <button
+                                                    key={tab}
+                                                    onClick={() => setActiveTab(tab)}
+                                                    className={`flex-1 py-1.5 px-2 rounded text-xs font-medium transition-all ${
+                                                        activeTab === tab 
+                                                            ? 'bg-slate-700 text-slate-200' 
+                                                            : 'text-slate-500 hover:text-slate-300'
+                                                    }`}
+                                                >
+                                                    {tab === 'models' ? '模型' : tab === 'datasets' ? '数据集' : '应用'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-3">
+                                            {(activeTab === 'models' ? favorites.models : activeTab === 'datasets' ? favorites.datasets : favorites.apps).map((item, idx) => (
+                                                <div key={idx} className="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg hover:bg-slate-800/50 transition-colors cursor-pointer">
+                                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                                        activeTab === 'models' ? 'bg-blue-500/20 text-blue-400' :
+                                                        activeTab === 'datasets' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                        'bg-purple-500/20 text-purple-400'
+                                                    }`}>
+                                                        {activeTab === 'models' ? <Icons.Brain /> : activeTab === 'datasets' ? <Icons.Database /> : <Icons.Bot />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-sm font-medium text-slate-200 truncate">{item.name}</h4>
+                                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                            <span>{item.type}</span>
+                                                            <span>·</span>
+                                                            <span>{item.size || item.users + ' 用户'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Access */}
+                                    <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-semibold text-slate-100">最近访问</h2>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {recentAccess.map((item, idx) => (
+                                                <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-slate-800/30 rounded-lg transition-colors cursor-pointer group">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors">
+                                                        {item.type === 'Notebook' ? <Icons.FileCode /> : 
+                                                         item.type === '模型' ? <Icons.Brain /> : 
+                                                         item.type === '应用' ? <Icons.Bot /> : 
+                                                         item.type === '配置文件' ? <Icons.Code /> : <Icons.Bot />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-sm text-slate-300 truncate group-hover:text-blue-400 transition-colors">{item.name}</h4>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <TypeBadge type={item.type} />
+                                                        <span className="text-xs text-slate-600">{item.time}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
