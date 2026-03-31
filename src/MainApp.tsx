@@ -9,6 +9,7 @@ import CloudService from './pages/CloudService';
 import ComputeCenter from './pages/ComputeCenter';
 import AdminCenter from './pages/AdminCenter';
 import DatasetDetail from './pages/DatasetDetail';
+import DataCenterFileManagement from './pages/DataCenterFileManagement';
 
 export default function MainApp() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -50,6 +51,7 @@ export default function MainApp() {
     <>
       {currentPage === 'dashboard' && <AIPlatformDashboard onNavigate={navigateTo} />}
       {currentPage === 'datacenter' && <DataCenter onNavigate={navigateTo} />}
+      {currentPage === 'datacenter-files' && <DataCenterFileManagement />}
       {currentPage === 'annotation' && <AnnotationSystem />}
       {currentPage === 'dev' && <DevEnvironment onNavigate={navigateTo} />}
       {currentPage === 'model' && <ModelCenter onNavigate={navigateTo} />}
