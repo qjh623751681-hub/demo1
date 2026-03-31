@@ -234,7 +234,7 @@ const teams = [
   { id: 'algorithm', name: '算法团队' }
 ];
 
-export default function DataCenterFileManagement() {
+export default function DataCenter() {
   const [selectedSpace, setSelectedSpace] = useState('personal');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [treeData, setTreeData] = useState(fileTreeData);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AIPlatformDashboard from './App';
-import DataCenter from './DataCenter';
+import DataCenter from './pages/DataCenter';
 import AnnotationSystem from './AnnotationSystem';
 import DevEnvironment from './pages/DevEnvironment';
 import ModelCenter from './pages/ModelCenter';
@@ -9,7 +9,6 @@ import CloudService from './pages/CloudService';
 import ComputeCenter from './pages/ComputeCenter';
 import AdminCenter from './pages/AdminCenter';
 import DatasetDetail from './pages/DatasetDetail';
-import DataCenterFileManagement from './pages/DataCenterFileManagement';
 
 export default function MainApp() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -50,8 +49,8 @@ export default function MainApp() {
   return (
     <>
       {currentPage === 'dashboard' && <AIPlatformDashboard onNavigate={navigateTo} />}
-      {currentPage === 'datacenter' && <DataCenter onNavigate={navigateTo} />}
-      {currentPage === 'datacenter-files' && <DataCenterFileManagement />}
+      {currentPage === 'datacenter' && <DataCenter />}
+      {currentPage === 'datacenter-files' && <DataCenter />}
       {currentPage === 'annotation' && <AnnotationSystem />}
       {currentPage === 'dev' && <DevEnvironment onNavigate={navigateTo} />}
       {currentPage === 'model' && <ModelCenter onNavigate={navigateTo} />}
