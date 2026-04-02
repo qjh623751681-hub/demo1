@@ -339,7 +339,7 @@ const navItems = [
 ];
 
 interface AIPlatformDashboardProps {
-  onNavigate?: (page: 'dashboard' | 'datacenter' | 'annotation') => void;
+  onNavigate?: (page: string) => void;
 }
 
 export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardProps) {
@@ -387,11 +387,22 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
         {/* 导航菜单 */}
         <nav className="flex-1 flex flex-col gap-0.5 w-full px-2">
           {navItems.map((item, index) => {
-            const isDatacenter = item.label === '数据中心';
-            
             const handleClick = () => {
-              if (isDatacenter && onNavigate) {
-                onNavigate('datacenter');
+              if (onNavigate) {
+                const pageMap: { [key: string]: string } = {
+                  '工作台': 'dashboard',
+                  '数据中心': 'datacenter',
+                  '开发环境': 'dev',
+                  '模型中心': 'model',
+                  'AI应用': 'app',
+                  '云服务': 'cloud',
+                  '算力中心': 'compute',
+                  '平台管理': 'admin'
+                };
+                const page = pageMap[item.label];
+                if (page) {
+                  onNavigate(page);
+                }
               }
             };
             
