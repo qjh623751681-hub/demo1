@@ -73,7 +73,11 @@ const datasets = [
   }
 ];
 
-export default function DatasetManagement() {
+interface DatasetManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function DatasetManagement({ onNavigate }: DatasetManagementProps) {
   const [selectedSpace, setSelectedSpace] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -115,11 +119,53 @@ export default function DatasetManagement() {
             <Database className="w-4 h-4" />
             <span>数据中心</span>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">数据集</span>
+            <span className="text-gray-900 font-medium">数据集管理</span>
           </div>
         </div>
 
-        <div className="flex-1"></div>
+        {/* 数据中心子模块快速导航 */}
+        <div className="flex-1 flex items-center justify-center gap-1">
+          <button
+            onClick={() => onNavigate?.('datacenter')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            文件管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-dataset')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              true
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            数据集管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-annotation')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            标注管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-pipeline')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            流水线管理
+          </button>
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -147,22 +193,31 @@ export default function DatasetManagement() {
         <div className="p-4 border-b border-gray-200">
           <div className="text-xs font-semibold text-gray-500 mb-3">数据中心</div>
           <nav className="space-y-1">
-            <a href="?page=datacenter" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            <button
+              onClick={() => onNavigate?.('datacenter')}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
+            >
               <Folder size={16} />
               <span>文件管理</span>
-            </a>
+            </button>
             <div className="flex items-center gap-3 px-3 py-2 text-sm text-blue-700 bg-blue-50 rounded-lg">
               <Database size={16} />
               <span className="font-medium">数据集</span>
             </div>
-            <a href="?page=datacenter-annotation" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            <button
+              onClick={() => onNavigate?.('datacenter-annotation')}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
+            >
               <Tag size={16} />
               <span>数据标注</span>
-            </a>
-            <a href="?page=datacenter-pipeline" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            </button>
+            <button
+              onClick={() => onNavigate?.('datacenter-pipeline')}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
+            >
               <Settings2 size={16} />
               <span>数据流水线</span>
-            </a>
+            </button>
           </nav>
         </div>
 

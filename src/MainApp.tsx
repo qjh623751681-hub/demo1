@@ -52,11 +52,11 @@ export default function MainApp() {
   return (
     <>
       {currentPage === 'dashboard' && <AIPlatformDashboard onNavigate={navigateTo} />}
-      {currentPage === 'datacenter' && <DataCenterFileManagement />}
-      {currentPage === 'datacenter-files' && <DataCenterFileManagement />}
-      {currentPage === 'datacenter-dataset' && <DatasetManagement />}
-      {currentPage === 'datacenter-annotation' && <AnnotationManagement />}
-      {currentPage === 'datacenter-pipeline' && <PipelineManagement />}
+      {currentPage === 'datacenter' && <DataCenterFileManagement onNavigate={navigateTo} />}
+      {currentPage === 'datacenter-files' && <DataCenterFileManagement onNavigate={navigateTo} />}
+      {currentPage === 'datacenter-dataset' && <DatasetManagement onNavigate={navigateTo} />}
+      {currentPage === 'datacenter-annotation' && <AnnotationManagement onNavigate={navigateTo} />}
+      {currentPage === 'datacenter-pipeline' && <PipelineManagement onNavigate={navigateTo} />}
       {currentPage === 'annotation' && <AnnotationSystem />}
       {currentPage === 'dev' && <DevEnvironment onNavigate={navigateTo} />}
       {currentPage === 'model' && <ModelCenter onNavigate={navigateTo} />}

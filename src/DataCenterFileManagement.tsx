@@ -294,7 +294,11 @@ const teams = [
   { id: 'algorithm', name: '算法团队' }
 ];
 
-export default function DataCenterFileManagement() {
+interface DataCenterFileManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function DataCenterFileManagement({ onNavigate }: DataCenterFileManagementProps) {
   const [selectedSpace, setSelectedSpace] = useState('personal');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -536,7 +540,49 @@ export default function DataCenterFileManagement() {
           </div>
         </div>
 
-        <div className="flex-1"></div>
+        {/* 数据中心子模块快速导航 */}
+        <div className="flex-1 flex items-center justify-center gap-1">
+          <button
+            onClick={() => onNavigate?.('datacenter')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              true
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            文件管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-dataset')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            数据集管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-annotation')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            标注管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-pipeline')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            流水线管理
+          </button>
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="relative">

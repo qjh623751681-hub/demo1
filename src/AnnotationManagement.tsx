@@ -3,7 +3,7 @@ import {
   Search, Bell, Plus, Filter, RefreshCw, Settings2,
   Database, Tag, Play, Pause, CheckCircle, AlertCircle, Eye, Edit3, Trash2,
   ChevronRight, X, Clock, Calendar, FileText, Layers, Settings, HardDrive, Zap,
-  MoreVertical, Folder, ArrowLeft, User, Users, Check, XCircle, Upload, Download, Smile
+  MoreVertical, Folder, ArrowLeft, User, Users, Check, XCircle, Upload, Download, Smile, Sparkles
 } from 'lucide-react';
 
 // 标注任务类型
@@ -84,7 +84,11 @@ const annotationTasks = [
   }
 ];
 
-export default function AnnotationManagement() {
+interface AnnotationManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function AnnotationManagement({ onNavigate }: AnnotationManagementProps) {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showAnnotationTool, setShowAnnotationTool] = useState(false);
@@ -96,6 +100,7 @@ export default function AnnotationManagement() {
       <div className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 flex items-center px-6 z-50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-blue-600" />
             <span className="font-bold text-lg text-gray-800">AI PM</span>
           </div>
           <div className="h-6 w-px bg-gray-200"></div>
@@ -103,11 +108,53 @@ export default function AnnotationManagement() {
             <Database className="w-4 h-4" />
             <span>数据中心</span>
             <ChevronRight className="w-4 h-4" />
-            <span>数据标注</span>
+            <span className="text-gray-900 font-medium">标注管理</span>
           </div>
         </div>
 
-        <div className="flex-1"></div>
+        {/* 数据中心子模块快速导航 */}
+        <div className="flex-1 flex items-center justify-center gap-1">
+          <button
+            onClick={() => onNavigate?.('datacenter')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            文件管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-dataset')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            数据集管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-annotation')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              true
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            标注管理
+          </button>
+          <button
+            onClick={() => onNavigate?.('datacenter-pipeline')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              false
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            流水线管理
+          </button>
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -132,18 +179,24 @@ export default function AnnotationManagement() {
         <div className="p-4 border-b border-gray-200">
           <div className="text-xs font-semibold text-gray-500 mb-3">数据中心</div>
           <nav className="space-y-1">
-            <a href="?page=datacenter-dataset" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            <button
+              onClick={() => onNavigate?.('datacenter-dataset')}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
+            >
               <Database size={16} />
               <span>数据集</span>
-            </a>
+            </button>
             <div className="flex items-center gap-3 px-3 py-2 text-sm text-blue-700 bg-blue-50 rounded-lg">
               <Tag size={16} />
               <span className="font-medium">数据标注</span>
             </div>
-            <a href="?page=datacenter-pipeline" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            <button
+              onClick={() => onNavigate?.('datacenter-pipeline')}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
+            >
               <Settings2 size={16} />
               <span>数据流水线</span>
-            </a>
+            </button>
           </nav>
         </div>
 
