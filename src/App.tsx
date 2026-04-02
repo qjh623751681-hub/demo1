@@ -48,6 +48,7 @@ import {
   HardDrive,
   Server
 } from 'lucide-react';
+import ComputeCenter from './pages/ComputeCenter';
 import { 
   PieChart, 
   Pie, 
@@ -347,6 +348,15 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
   const [activeTab, setActiveTab] = useState('全部');
   const [showGuide, setShowGuide] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState('dashboard');
+
+  // 处理页面跳转
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+    if (onNavigate) {
+      onNavigate(page);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -388,22 +398,22 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
         {/* 导航菜单 */}
         <nav className="flex-1 flex flex-col gap-0.5 w-full px-2">
           {navItems.map((item, index) => {
+            const pageMap: { [key: string]: string } = {
+              '工作台': 'dashboard',
+              '数据中心': 'datacenter',
+              '开发环境': 'dev',
+              '模型中心': 'model',
+              'AI应用': 'app',
+              '云服务': 'cloud',
+              '算力中心': 'compute',
+              '平台管理': 'admin'
+            };
+            const page = pageMap[item.label];
+            const isActive = currentPage === page;
+            
             const handleClick = () => {
-              if (onNavigate) {
-                const pageMap: { [key: string]: string } = {
-                  '工作台': 'dashboard',
-                  '数据中心': 'datacenter',
-                  '开发环境': 'dev',
-                  '模型中心': 'model',
-                  'AI应用': 'app',
-                  '云服务': 'cloud',
-                  '算力中心': 'compute',
-                  '平台管理': 'admin'
-                };
-                const page = pageMap[item.label];
-                if (page) {
-                  onNavigate(page);
-                }
+              if (page) {
+                handleNavigate(page);
               }
             };
             
@@ -412,7 +422,7 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
                 key={index}
                 onClick={handleClick}
                 className={`group relative w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-200 ${
-                  item.active 
+                  isActive 
                     ? 'bg-blue-50 text-blue-600 shadow-sm' 
                     : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 }`}
@@ -450,9 +460,12 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-200/80 flex items-center justify-between px-6 sticky top-0 z-10">
           {/* 面包屑 */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors">首页</span>
+            <span className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" onClick={() => handleNavigate('dashboard')}>首页</span>
             <ChevronRight className="w-4 h-4 text-gray-300" />
-            <span className="text-gray-900 font-semibold">工作台</span>
+            <span className="text-gray-900 font-semibold">
+              {currentPage === 'dashboard' && '工作台'}
+              {currentPage === 'compute' && '算力中心'}
+            </span>
           </div>
 
           {/* 右侧操作区 */}
@@ -495,34 +508,36 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
 
         {/* 页面内容 */}
         <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-          {/* 新手引导横幅 */}
-          {showGuide && (
-            <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50 border border-blue-100 rounded-2xl p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-              <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <Lightbulb className="w-6 h-6 text-amber-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">👋 欢迎使用 AI 算力调度平台</h3>
-                    <p className="text-sm text-gray-600 mt-1">4步快速开始：①上传数据 → ②启动环境 → ③训练模型 → ④部署应用</p>
+          {currentPage === 'dashboard' ? (
+            <>
+              {/* 新手引导横幅 */}
+              {showGuide && (
+                <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50 border border-blue-100 rounded-2xl p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                        <Lightbulb className="w-6 h-6 text-amber-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">👋 欢迎使用 AI 算力调度平台</h3>
+                        <p className="text-sm text-gray-600 mt-1">4步快速开始：①上传数据 → ②启动环境 → ③训练模型 → ④部署应用</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/20">
+                        开始引导
+                      </button>
+                      <button 
+                        onClick={() => setShowGuide(false)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/20">
-                    开始引导
-                  </button>
-                  <button 
-                    onClick={() => setShowGuide(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+              )}
 
           {/* 资源概览卡片 */}
           <div className="grid grid-cols-4 gap-4">
@@ -944,6 +959,18 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
               </div>
             </div>
           </div>
+            </>
+          ) : currentPage === 'compute' ? (
+            <ComputeCenter onNavigate={handleNavigate} />
+          ) : (
+            <div className="flex items-center justify-center h-[60vh]">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🚧</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">页面开发中</h3>
+                <p className="text-gray-500">该功能正在开发中，敬请期待</p>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
