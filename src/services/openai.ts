@@ -67,10 +67,19 @@ export async function sendMessage(
   userMessage: string,
   systemPrompt?: string
 ): Promise<string> {
-  const messages: Message[] = [
-    ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-    { role: 'user', content: userMessage }
-  ];
+  const messages: Message[] = [];
+  
+  if (systemPrompt) {
+    messages.push({
+      role: 'system' as const,
+      content: systemPrompt
+    });
+  }
+  
+  messages.push({
+    role: 'user' as const,
+    content: userMessage
+  });
 
   const response = await chatCompletion(messages);
   return response.choices[0].message.content;
