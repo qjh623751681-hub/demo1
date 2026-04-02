@@ -121,6 +121,7 @@ const todos = [
 ];
 
 const quickActions = [
+  { title: 'AI助手', desc: 'OpenAI对话', icon: Sparkles, color: 'bg-indigo-500', hoverColor: 'hover:bg-indigo-600' },
   { title: '开始实验', desc: '启动Notebook', icon: BookOpen, color: 'bg-blue-500', hoverColor: 'hover:bg-blue-600' },
   { title: '启动训练', desc: '提交训练任务', icon: Play, color: 'bg-violet-500', hoverColor: 'hover:bg-violet-600' },
   { title: '部署服务', desc: '发布推理服务', icon: Rocket, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600' },
@@ -829,6 +830,11 @@ export default function AIPlatformDashboard({ onNavigate }: AIPlatformDashboardP
                   {quickActions.map((action, idx) => (
                     <button 
                       key={idx}
+                      onClick={() => {
+                        if (action.title === 'AI助手' && onNavigate) {
+                          onNavigate('ai-assistant');
+                        }
+                      }}
                       className="p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all text-left group"
                     >
                       <div className={`w-9 h-9 ${action.color} ${action.hoverColor} rounded-lg flex items-center justify-center mb-2 transition-colors`}>

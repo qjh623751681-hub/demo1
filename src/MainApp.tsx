@@ -8,6 +8,7 @@ import AnnotationSystem from './AnnotationSystem';
 import DevEnvironment from './pages/DevEnvironment';
 import ModelCenter from './pages/ModelCenter';
 import AIApplication from './pages/AIApplication';
+import AIAssistant from './pages/AIAssistant';
 import CloudService from './pages/CloudService';
 import ComputeCenter from './pages/ComputeCenter';
 import AdminCenter from './pages/AdminCenter';
@@ -61,6 +62,7 @@ export default function MainApp() {
       {currentPage === 'dev' && <DevEnvironment onNavigate={navigateTo} />}
       {currentPage === 'model' && <ModelCenter onNavigate={navigateTo} />}
       {currentPage === 'app' && <AIApplication onNavigate={navigateTo} />}
+      {currentPage === 'ai-assistant' && <AIAssistant />}
       {currentPage === 'cloud' && <CloudService onNavigate={navigateTo} />}
       {currentPage === 'compute' && <ComputeCenter onNavigate={navigateTo} />}
       {currentPage === 'admin' && <AdminCenter onNavigate={navigateTo} />}
